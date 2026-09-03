@@ -1,0 +1,22 @@
+[package]
+name = "stem_coil_layout"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+embed-doc-image = { version = "0.1.4", optional = true }
+
+[features]
+default = []
+serde = ["dep:serde"]
+doc-images = ["dep:embed-doc-image"]
+
+[dev-dependencies]
+stem_core = { path = "../stem_core", features = ["cairo"] }
+planar_geo = { version = "0.6.0" , features = ["cairo"]}
+cairo_viewport = { version = "0.3"}
+
+[package.metadata.docs.rs]
+features = ["serde", "doc-images"]
+rustdoc-args = ["--cfg", "docsrs"]
