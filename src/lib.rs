@@ -105,7 +105,7 @@ impl std::fmt::Display for Zone {
     }
 }
 
-use std::cmp::Ordering;
+use std::{cmp::Ordering, num::NonZeroU16};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -202,7 +202,7 @@ pub enum CoilLayout {
     slot bottom (see the drawing in the enum docstring). The height of the
     individual slot slices is identical.
      */
-    MultiVertical(u16),
+    MultiVertical(NonZeroU16),
 }
 
 impl CoilLayout {
@@ -214,23 +214,23 @@ impl CoilLayout {
     ```
     use stem_coil_layout::CoilLayout;
 
-    assert_eq!(CoilLayout::Single.layers(), 1);
-    assert_eq!(CoilLayout::SingleFilled.layers(), 1);
-    assert_eq!(CoilLayout::DoubleVertical.layers(), 2);
-    assert_eq!(CoilLayout::DoubleHorizontal.layers(), 2);
-    assert_eq!(CoilLayout::Quadruple.layers(), 4);
-    assert_eq!(CoilLayout::MultiVertical(5).layers(), 5);
+    assert_eq!(CoilLayout::Single.layers().get(), 1);
+    assert_eq!(CoilLayout::SingleFilled.layers().get(), 1);
+    assert_eq!(CoilLayout::DoubleVertical.layers().get(), 2);
+    assert_eq!(CoilLayout::DoubleHorizontal.layers().get(), 2);
+    assert_eq!(CoilLayout::Quadruple.layers().get(), 4);
+    assert_eq!(CoilLayout::MultiVertical(5.try_into().expect("not zero")).layers().get(), 5);
     ```
      */
-    pub const fn layers(&self) -> u16 {
-        return match self {
-            CoilLayout::Single => 1,
-            CoilLayout::SingleFilled => 1,
-            CoilLayout::DoubleVertical => 2,
-            CoilLayout::DoubleHorizontal => 2,
-            CoilLayout::Quadruple => 4,
+    pub const fn layers(&self) -> NonZeroU16 {
+        match self {
+            CoilLayout::Single => NonZeroU16::new(1).expect("not zero"),
+            CoilLayout::SingleFilled => NonZeroU16::new(1).expect("not zero"),
+            CoilLayout::DoubleVertical => NonZeroU16::new(2).expect("not zero"),
+            CoilLayout::DoubleHorizontal => NonZeroU16::new(2).expect("not zero"),
+            CoilLayout::Quadruple => NonZeroU16::new(4).expect("not zero"),
             CoilLayout::MultiVertical(val) => *val,
-        };
+        }
     }
 
     /**
@@ -309,8 +309,8 @@ impl CoilLayout {
     ```
      */
     pub fn ordering_vertical(&self, first_layer: u16, second_layer: u16) -> Ordering {
-        assert!(first_layer < self.layers());
-        assert!(second_layer < self.layers());
+        assert!(first_layer < self.layers().get());
+        assert!(second_layer < self.layers().get());
         match self {
             CoilLayout::Single => return Ordering::Equal,
             CoilLayout::SingleFilled => return Ordering::Equal,
