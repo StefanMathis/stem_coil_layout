@@ -31,7 +31,7 @@ fn plot_slotted_and_air_gap_lin_with_zone_pos() -> Result<(), Box<dyn std::error
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Default::default()),
-        pole_pairs: 1,
+        pole_pairs: 1.try_into().expect("not zero"),
         air_gap: Box::new(PlainAirGap {
             num_segments: 0,
             air_gap_winding_height: Length::new::<millimeter>(8.0),
@@ -51,9 +51,9 @@ fn plot_slotted_and_air_gap_lin_with_zone_pos() -> Result<(), Box<dyn std::error
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Default::default()),
-        pole_pairs: 1,
+        pole_pairs: 1.try_into().expect("not zero"),
         air_gap: Box::new(SlottedAirGap {
-            slots: 3,
+            slots: 3.try_into().expect("not zero"),
             starts_in_slot_middle: false,
             carter_factor_model: CarterFactorModel::Bin12,
             slot: Box::new(slot),
@@ -172,7 +172,7 @@ fn plot_slotted_and_air_gap_rot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(plain_air_gap),
         flux_barrier: None,
@@ -192,7 +192,12 @@ fn plot_slotted_and_air_gap_rot() -> Result<(), Box<dyn std::error::Error>> {
     }
     .try_into()
     .unwrap();
-    let air_gap_slotted = SlottedAirGap::new(24, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap_slotted = SlottedAirGap::new(
+        24.try_into().expect("not zero"),
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let core_slotted: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),
@@ -200,7 +205,7 @@ fn plot_slotted_and_air_gap_rot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap_slotted),
         flux_barrier: None,
