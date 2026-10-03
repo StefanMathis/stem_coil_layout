@@ -8,14 +8,19 @@ Types for specifying the positioning of coils in stem - a Simulation Toolbox for
 #![doc = include_str!("../docs/main.md")]
 #![deny(missing_docs)]
 
-/// An index for a coil / "zone" of a winding.
+/// An index identifying a winding zone by its slot and layer.
 ///
-/// The coils of a winding are placed inside "slots". Depending on the
-/// [`CoilLayout`] of a winding, multiple coils may share one slot and occupy
-/// different "layers" within that slot. This struct is an index to a particular
-/// winding zone defined by [`slot`](Zone::slot) and [`layer`](Zone::layer)
-/// index which can contain a coil. The following image shows the winding zones
-/// for an air gap and a slotted winding:
+/// The coil sides of a winding are placed inside "slots".  A "slot" is the
+/// space where one or more coil sides of a winding are placed. This space might
+/// be a physical cavity in the air gap surface of a stator or rotor (see
+/// [stem_slot](https://crates.io/crates/stem_slot)) or an area on top of the
+/// air gap surface in case of an air gap winding.
+///
+/// A layer identifies one of the distinct positions within a slot where a coil
+/// side can be placed (see [`CoilLayout`]). A [`Zone`] identifies such a
+/// position by its slot and layer indices. A zone may be empty or contain a
+/// coil side. The following image shows the winding zones for an air gap and a
+/// slotted winding:
 #[doc = ""]
 #[cfg_attr(
     feature = "doc-images",
@@ -33,10 +38,9 @@ Types for specifying the positioning of coils in stem - a Simulation Toolbox for
 ///
 /// _This image was produced with `examples/winding_zone_plots.rs`._
 ///
-/// [`Zone`] implements [`Ord`]: A zone is said to be greater than another one
-/// if its [`slot`](Zone::slot) index is larger. If the [`slot`](Zone::slot)
-/// indices are equal, the zone with the larger [`layer`](Zone::layer) index is
-/// greater.
+/// [`Zone`] implements [`Ord`]: A zone is greater than another one if its
+/// [`slot`](Zone::slot) index is larger. If the [`slot`](Zone::slot) indices
+/// are equal, the zone with the larger [`layer`](Zone::layer) index is greater.
 ///
 /// # Examples
 ///
@@ -131,14 +135,21 @@ pub const QUADRUPLE_LAYER_TOP_RIGHT: u16 = 2;
 pub const QUADRUPLE_LAYER_BOTTOM_RIGHT: u16 = 3;
 
 /**
-An enum defining the position of individual coils / winding layers within a slot.
+An enum defining the number and arrangement of winding layers within a slot.
 
-This enum is used to represent the coil / layer positioning of different winding
-types. For example, in a double-layer distributed winding, the two coils in a
-slot are placed on top of each other (variant [`CoilLayout::DoubleVertical`]). By
-contrast, a double-layer tooth-coil winding is represented by a
-[`CoilLayout::DoubleHorizontal`]. The following drawing shows the layout for all
-variants.
+A "slot" is the space where one or more coil sides of a winding are placed. This
+space might be a physical cavity in the air gap surface of a stator or rotor (
+see [stem_slot](https://crates.io/crates/stem_slot)) or a an area on top of the
+air gap surface in case of an air gap winding.
+
+A [`Zone`] identifies a winding position by its slot and layer indices.
+[`CoilLayout`] defines how many layers are available within a slot and how
+these layers are arranged relative to each other. For example, in a
+double-layer distributed winding, the two coil sides in a slot are placed on
+top of each other (variant [`CoilLayout::DoubleVertical`]). By contrast, a
+double-layer tooth-coil winding is represented by
+[`CoilLayout::DoubleHorizontal`]. The following drawing shows the layout for
+all variants.
  */
 #[doc = ""]
 #[cfg_attr(
@@ -157,51 +168,49 @@ variants.
 /**
 
 In stem, the `Winding` trait from the
-[stem_winding](https://crates.io/crates/stem_winding) crate requires the
-implementation of a `coil_layout` method which returns the corresponding variant
-of this enum. This is used to calculate properties like e.g. the slot leakage
-inductance for motors.
+[stem_winding](https://crates.io/crates/stem_winding) crate requires an
+implementation of the `coil_layout` method, which returns the corresponding
+variant of this enum. This is used to calculate properties such as the slot
+leakage inductance of motors.
  */
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CoilLayout {
     /**
-    A variant representing single-layer windings. The single coil / layer fills
-    the entire winding area of the slot (but not the slot opening).
-     */
+    A variant representing a single-layer winding. The single layer occupies the
+    entire winding area of the slot, excluding the slot opening.
+    */
     Single,
     /**
-    A variant representing single-layer windings, usually casted squirrel-cage
-    windings. The single coil / layer fills the slot completely (including the
-    slot opening)
-     */
+    A variant representing a single-layer winding in which the layer occupies the
+    entire slot, including the slot opening. This layout is typically used for
+    cast squirrel-cage windings.
+    */
     SingleFilled,
     /**
-    A variant representing double layer windings (e.g. distributed windings).
-    The coil in the first layer is placed at the slot bottom, the one in the
-    second layer at the slot top.
-     */
+    A variant representing a double-layer winding, such as a distributed winding.
+    The first layer is positioned at the bottom of the slot and the second layer
+    at the top.
+    */
     DoubleVertical,
     /**
-    A variant representing double layer windings (e.g. tooth-coil windings).
-    The coil in the first layer is placed on the left side of the slot, the one
-    in the second layer on the right side.
-     */
+    A variant representing a double-layer winding, such as a tooth-coil winding.
+    The first layer is positioned on the left side of the slot and the second layer
+    on the right.
+    */
     DoubleHorizontal,
     /**
-    A variant representing a quadruple-layer winding, which is essentially a
-    tooth-coil winding where the coils at the two slot sides are split in the
-    middle again. The individual coils / layers are placed in a clockwise order,
-    starting on the left side of the slot bottom.
-     */
+    A variant representing a four-layer winding. The layers are arranged as two
+    pairs on the left and right sides of the slot, respectively. The four layers
+    are ordered clockwise, starting at the bottom-left position.
+    */
     Quadruple,
     /**
-    A variant representing a winding with an arbitrary number of layers, which
-    is equal to the value of the anonymous field of the variant. The individual
-    layers are placed on top of each other, starting with the first layer at the
-    slot bottom (see the drawing in the enum docstring). The height of the
-    individual slot slices is identical.
-     */
+    A variant representing a winding with an arbitrary number of layers. The
+    number of layers is given by the value of the variant's field. The layers are
+    stacked vertically, starting with the first layer at the bottom of the slot
+    (see the drawing in the enum documentation). All layers have equal height.
+    */
     MultiVertical(NonZeroU16),
 }
 
