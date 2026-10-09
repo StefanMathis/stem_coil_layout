@@ -1,5 +1,5 @@
 [package]
-name = "stem_coil_layout"
+name = "stem_types"
 version = "0.1.0"
 edition = "2024"
 

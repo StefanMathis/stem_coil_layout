@@ -1,4 +1,4 @@
-use stem_coil_layout::*;
+use stem_types::*;
 
 #[test]
 fn test_zone_ordering() {

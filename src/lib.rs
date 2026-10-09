@@ -1,6 +1,7 @@
 /*!
 [`Zone`]: crate::Zone
 [`CoilLayout`]: crate::CoilLayout
+[`SpatialOrder`]: crate::SpatialOrder
 
 Types for specifying the positioning of coils in stem - a Simulation Toolbox for Electric Motors.
 
@@ -45,7 +46,7 @@ Types for specifying the positioning of coils in stem - a Simulation Toolbox for
 /// # Examples
 ///
 /// ```
-/// use stem_coil_layout::Zone;
+/// use stem_types::Zone;
 ///
 /// let zone_a = Zone {slot: 0, layer: 0};
 /// let zone_b = Zone {slot: 1, layer: 0};
@@ -221,7 +222,7 @@ impl CoilLayout {
     # Examples
 
     ```
-    use stem_coil_layout::CoilLayout;
+    use stem_types::CoilLayout;
 
     assert_eq!(CoilLayout::Single.layers().get(), 1);
     assert_eq!(CoilLayout::SingleFilled.layers().get(), 1);
@@ -258,7 +259,7 @@ impl CoilLayout {
     and the second at the slot top. Hence, the first layer is "lesser" compared
     to the second.
     ```
-    use stem_coil_layout::CoilLayout;
+    use stem_types::CoilLayout;
 
     let coil_layout = CoilLayout::DoubleVertical;
 
@@ -272,7 +273,7 @@ impl CoilLayout {
     A [`CoilLayout::DoubleHorizontal`] aranges both layers in the same vertical
     position. Hence, both layers are "equal".
     ```
-    use stem_coil_layout::CoilLayout;
+    use stem_types::CoilLayout;
 
     let coil_layout = CoilLayout::DoubleHorizontal;
 
@@ -294,7 +295,7 @@ impl CoilLayout {
     lesser than 1 and 2:
 
     ```
-    use stem_coil_layout::CoilLayout;
+    use stem_types::CoilLayout;
 
     let coil_layout = CoilLayout::Quadruple;
 
@@ -308,7 +309,7 @@ impl CoilLayout {
     A [`CoilLayout::MultiVertical`] arranges the all layers on top of each
     other, starting at the slot bottom.
     ```
-    use stem_coil_layout::CoilLayout;
+    use stem_types::CoilLayout;
 
     let coil_layout = CoilLayout::MultiVertical(3);
 
@@ -360,7 +361,7 @@ impl CoilLayout {
     # Examples
 
     ```
-    use stem_coil_layout::CoilLayout;
+    use stem_types::CoilLayout;
 
     // True for these coil layouts:
     assert!(CoilLayout::SingleFilled.includes_slot_opening());
@@ -377,6 +378,76 @@ impl CoilLayout {
         match self {
             CoilLayout::SingleFilled => true,
             _ => false,
+        }
+    }
+}
+
+/// A spatial harmonic order expressed in mechanical or electrical coordinates.
+///
+/// A mechanical spatial order describes the number of spatial periods of a
+/// harmonic over one mechanical revolution. For a machine with `p` pole
+/// pairs, the corresponding electrical order is related by
+///
+/// `elec_order = mech_order / p`.
+///
+/// The two representations are useful in different contexts. Mechanical
+/// orders directly identify the spatial harmonics of the air-gap field, while
+/// electrical orders express those same harmonics relative to the pole-pair
+/// periodicity of the machine.
+///
+/// For example, for a machine with 5 pole pairs, mechanical order `5`
+/// corresponds to electrical order `1`. Mechanical order `1`, on the other
+/// hand, corresponds to electrical order `1 / 5` and therefore cannot be
+/// represented by an integer electrical order.
+///
+/// Consequently, some non-zero spatial orders can only be represented by the
+/// [`Mechanical`](SpatialOrder::Mechanical) variant. For example, a machine
+/// with 10 pole pairs and 24 slots, equipped with a double-layer tooth-coil
+/// winding, produces a non-zero winding factor at electrical order `1 / 5`,
+/// corresponding to mechanical order `2` (`1 / 5 * 10`).
+///
+/// This design makes two deliberate tradeoffs:
+///
+/// - Both variants use integer orders, avoiding arbitrary fractional or
+///   continuous values that do not necessarily correspond to the intended
+///   spatial harmonic.
+/// - The fundamental winding order can always be expressed as
+///   [`Electrical(1)`](SpatialOrder::Electrical), independently of the
+///   machine's number of pole pairs.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SpatialOrder {
+    /// A spatial order measured over the mechanical air gap circumference /
+    /// width.
+    ///
+    /// Mechanical orders are integer spatial harmonic indices. For example,
+    /// the fundamental field of a machine with `p` pole pairs has mechanical
+    /// order `p`.
+    Mechanical(u32),
+    /// A spatial order normalized to the number of pole pairs.
+    ///
+    /// Electrical orders are integer harmonic indices relative to the
+    /// machine's fundamental electrical period. An electrical order of `1`
+    /// therefore corresponds to the mechanical order given by the machine's
+    /// number of pole pairs.
+    Electrical(u32),
+}
+
+impl SpatialOrder {
+    /// Returns the spatial order expressed in mechanical coordinates.
+    ///
+    /// For an [SpatialOrder::Mechanical] value, this returns the contained
+    /// order unchanged. For an [SpatialOrder::Electrical] value, the order
+    /// is multiplied by `pole_pairs`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resulting mechanical order does not fit into a u32.
+    pub fn to_mechanical(self, pole_pairs: NonZeroU16) -> u32 {
+        match self {
+            Self::Mechanical(order) => order,
+            Self::Electrical(order) => order
+                .checked_mul(u32::from(pole_pairs.get()))
+                .expect("mechanical spatial order exceeds u32::MAX"),
         }
     }
 }
