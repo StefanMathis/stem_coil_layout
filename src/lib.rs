@@ -414,7 +414,7 @@ impl CoilLayout {
 /// - The fundamental winding order can always be expressed as
 ///   [`Electrical(1)`](SpatialOrder::Electrical), independently of the
 ///   machine's number of pole pairs.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum SpatialOrder {
     /// A spatial order measured over the mechanical air gap circumference /
     /// width.
